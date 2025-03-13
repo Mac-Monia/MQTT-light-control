@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT Light Control</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">MQTT Light Control</h1>
+        
+        <div class="flex flex-col items-center mb-8">
+            <div id="light-indicator" class="w-32 h-32 rounded-full bg-gray-300 mb-4 flex items-center justify-center transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+            </div>
+            <p id="status" class="text-lg font-medium text-gray-700">Status: Waiting for command...</p>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <button onclick="sendCommand('ON')" class="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+                Turn ON
+            </button>
+            <button onclick="sendCommand('OFF')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                Turn OFF
+            </button>
+        </div>
+        
+        <div class="mt-8 text-sm text-gray-500">
+            <p>Connected to: wss://test.mosquitto.org:8081</p>
+            <p>Topic: /student_group/light_control</p>
+        </div>
+    </div>
+
+    <script>
+        const client = mqtt.connect('wss://test.mosquitto.org:8081');
+        const lightIndicator = document.getElementById('light-indicator');
+        const statusText = document.getElementById('status');
+        
+        client.on('connect', function () {
+            console.log("Connected to MQTT broker");
+            statusText.innerText = "Status: Connected";
+        });
+
+        client.on('error', function (error) {
+            console.error("Connection error:", error);
+            statusText.innerText = "Status: Connection error";
+        });
+
+        function sendCommand(command) {
+            client.publish('/student_group/light_control', command);
+            updateLightStatus(command);
+        }
+        
+        function updateLightStatus(status) {
+            statusText.innerText = "Status: " + status;
+            
+            if (status === 'ON') {
+                lightIndicator.classList.remove('bg-gray-300');
+                lightIndicator.classList.add('bg-yellow-300');
+                lightIndicator.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                `;
+            } else if (status === 'OFF') {
+                lightIndicator.classList.remove('bg-yellow-300');
+                lightIndicator.classList.add('bg-gray-300');
+                lightIndicator.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
